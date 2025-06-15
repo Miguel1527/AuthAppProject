@@ -1,33 +1,40 @@
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.*;   // GUI Components
+import javax.swing.table.DefaultTableModel; 
 import javax.swing.table.TableRowSorter;
-import java.awt.*;
-import java.sql.*;
-import java.time.LocalDateTime;
+import java.awt.*;  //Layout and window features
+import java.sql.*; //Database Connectivity
+import java.time.LocalDateTime; 
 import java.time.format.DateTimeFormatter;
-import java.util.logging.Logger;
+import java.util.logging.Logger; //Logging Framework
 import java.util.regex.Pattern;
 
 
 public class AuthApp {
 
+	//Logger instance for logging important event and errors
     private static final Logger logger = AppLogger.getLogger();
 
     public static void main(String[] args) {
+    	//Ensures GUI creation runs on the Event Dispatch Thread
         SwingUtilities.invokeLater(AuthApp::showLoginScreen);
     }
 
+    //Displays the login screen
     public static void showLoginScreen() {
         JFrame frame = new JFrame("Login");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(300, 200);
-        frame.setLayout(new GridLayout(4, 2));
+        frame.setLayout(new GridLayout(4, 2)); //4 rows, 2 columns
 
+        // Input fields
         JTextField usernameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
+        
+        //Buttons
         JButton loginButton = new JButton("Login");
         JButton signupButton = new JButton("Signup");
 
+        // Add component to the frame
         frame.add(new JLabel("Username:"));
         frame.add(usernameField);
         frame.add(new JLabel("Password:"));
@@ -35,9 +42,12 @@ public class AuthApp {
         frame.add(loginButton);
         frame.add(signupButton);
 
+        //Login button action
         loginButton.addActionListener(e -> {
             String username = usernameField.getText();
             String password = String.valueOf(passwordField.getPassword());
+            
+            //Try to authenticate 
             String userType = authenticate(username, password);
 
             if (userType != null) {
@@ -49,29 +59,37 @@ public class AuthApp {
             }
         });
 
+        //signup button action
         signupButton.addActionListener(e -> {
             frame.dispose();
-            showSignupScreen();
+            showSignupScreen(); 
         });
 
         frame.setVisible(true);
     }
 
+    //Displays the signup/registration screen
     public static void showSignupScreen() {
         JFrame frame = new JFrame("Signup");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 300);
-        frame.setLayout(new GridLayout(8, 2));
+        frame.setLayout(new GridLayout(8, 2)); //8 rows, 2 columns
 
+        //Input fields
         JTextField usernameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
         JTextField fullNameField = new JTextField();
         JTextField phoneField = new JTextField();
+        
+        //Dropdowns for gender and user type
         JComboBox<String> genderBox = new JComboBox<>(new String[]{"Male", "Female"});
         JComboBox<String> userTypeBox = new JComboBox<>(new String[]{"Customer", "Employee"});
+        
+        //Buttons 
         JButton registerButton = new JButton("Register");
         JButton backButton = new JButton("Back to Login");
 
+        //Add components to frame
         frame.add(new JLabel("Username:"));
         frame.add(usernameField);
         frame.add(new JLabel("Password:"));
@@ -87,7 +105,9 @@ public class AuthApp {
         frame.add(registerButton);
         frame.add(backButton);
 
+        //Register button action
         registerButton.addActionListener(e -> {
+        	//collect input data
             String username = usernameField.getText();
             String password = String.valueOf(passwordField.getPassword());
             String fullName = fullNameField.getText();
@@ -95,6 +115,7 @@ public class AuthApp {
             String gender = genderBox.getSelectedItem().toString();
             String userType = userTypeBox.getSelectedItem().toString();
 
+            //Attempt registration
             if (register(username, password, fullName, phone, gender, userType)) {
                 JOptionPane.showMessageDialog(frame, "Registration successful!");
                 logger.info("User '" + username + "' registered successfully.");
@@ -106,6 +127,7 @@ public class AuthApp {
             }
         });
 
+        // Back to login action
         backButton.addActionListener(e -> {
             frame.dispose();
             showLoginScreen();
@@ -114,6 +136,7 @@ public class AuthApp {
         frame.setVisible(true);
     }
 
+    //Displays dashboard based on user type
     public static void showDashboard(String userType, String username) {
         if (userType == null) {
             JOptionPane.showMessageDialog(null, "Error: No user type returned.");
@@ -121,7 +144,6 @@ public class AuthApp {
         }
 
         if (userType.equalsIgnoreCase("Employee")) {
-            // Employee dashboard code unchanged
             JFrame frame = new JFrame("Employee Dashboard");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(800, 600);
@@ -473,6 +495,7 @@ public class AuthApp {
         }
     }
 
+    //Authenticates a user against the database
     private static String authenticate(String username, String password) {
         try (Connection conn = Database.getConnection()) {
             String sql = "SELECT user_type FROM users WHERE username = ? AND password = ?";
@@ -495,6 +518,7 @@ public class AuthApp {
         }
     }
 
+    //Registers a new user in the database
     private static boolean register(String username, String password, String fullName, String phone, String gender, String userType) {
         try (Connection conn = Database.getConnection()) {
             String sql = "INSERT INTO users (username, password, full_name, phone, gender, user_type) VALUES (?, ?, ?, ?, ?, ?)";
