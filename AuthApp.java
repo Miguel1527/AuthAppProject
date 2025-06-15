@@ -1,37 +1,33 @@
-import javax.swing.*;           // GUI components
+import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;              // Layout and window features
-import java.sql.*;              // Database connectivity
+import javax.swing.table.TableRowSorter;
+import java.awt.*;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.logging.Logger; // Logging framework
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
 
 public class AuthApp {
 
-    // Logger instance for logging important events and errors
     private static final Logger logger = AppLogger.getLogger();
 
     public static void main(String[] args) {
-        // Ensures GUI creation runs on the Event Dispatch Thread
         SwingUtilities.invokeLater(AuthApp::showLoginScreen);
     }
 
-    // Displays the login screen
     public static void showLoginScreen() {
         JFrame frame = new JFrame("Login");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(300, 200);
-        frame.setLayout(new GridLayout(4, 2)); // 4 rows, 2 columns
+        frame.setLayout(new GridLayout(4, 2));
 
-        // Input fields
         JTextField usernameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
-
-        // Buttons
         JButton loginButton = new JButton("Login");
         JButton signupButton = new JButton("Signup");
 
-        // Add components to frame
         frame.add(new JLabel("Username:"));
         frame.add(usernameField);
         frame.add(new JLabel("Password:"));
@@ -39,57 +35,43 @@ public class AuthApp {
         frame.add(loginButton);
         frame.add(signupButton);
 
-        // Login button action
         loginButton.addActionListener(e -> {
             String username = usernameField.getText();
             String password = String.valueOf(passwordField.getPassword());
-
-            // Try to authenticate
             String userType = authenticate(username, password);
 
             if (userType != null) {
                 JOptionPane.showMessageDialog(frame, "Login successful!");
                 frame.dispose();
-                showDashboard(userType, username); // Show dashboard based on user type
+                showDashboard(userType, username);
             } else {
                 JOptionPane.showMessageDialog(frame, "Invalid username or password.");
             }
         });
 
-        // Signup button action
         signupButton.addActionListener(e -> {
             frame.dispose();
-            showSignupScreen(); // Show signup screen
+            showSignupScreen();
         });
 
         frame.setVisible(true);
     }
 
-    // Displays the signup/registration screen
     public static void showSignupScreen() {
         JFrame frame = new JFrame("Signup");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 300);
-        frame.setLayout(new GridLayout(8, 2)); // 8 rows, 2 columns
+        frame.setLayout(new GridLayout(8, 2));
 
-        // Input fields
         JTextField usernameField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
         JTextField fullNameField = new JTextField();
         JTextField phoneField = new JTextField();
-
-        // Dropdowns for gender and user type
-        String[] genders = { "Male", "Female" };
-        JComboBox<String> genderBox = new JComboBox<>(genders);
-
-        String[] userTypes = { "Customer", "Employee" };
-        JComboBox<String> userTypeBox = new JComboBox<>(userTypes);
-
-        // Buttons
+        JComboBox<String> genderBox = new JComboBox<>(new String[]{"Male", "Female"});
+        JComboBox<String> userTypeBox = new JComboBox<>(new String[]{"Customer", "Employee"});
         JButton registerButton = new JButton("Register");
         JButton backButton = new JButton("Back to Login");
 
-        // Add components to frame
         frame.add(new JLabel("Username:"));
         frame.add(usernameField);
         frame.add(new JLabel("Password:"));
@@ -105,9 +87,7 @@ public class AuthApp {
         frame.add(registerButton);
         frame.add(backButton);
 
-        // Register button action
         registerButton.addActionListener(e -> {
-            // Collect input data
             String username = usernameField.getText();
             String password = String.valueOf(passwordField.getPassword());
             String fullName = fullNameField.getText();
@@ -115,7 +95,6 @@ public class AuthApp {
             String gender = genderBox.getSelectedItem().toString();
             String userType = userTypeBox.getSelectedItem().toString();
 
-            // Attempt registration
             if (register(username, password, fullName, phone, gender, userType)) {
                 JOptionPane.showMessageDialog(frame, "Registration successful!");
                 logger.info("User '" + username + "' registered successfully.");
@@ -127,7 +106,6 @@ public class AuthApp {
             }
         });
 
-        // Back to login action
         backButton.addActionListener(e -> {
             frame.dispose();
             showLoginScreen();
@@ -136,7 +114,6 @@ public class AuthApp {
         frame.setVisible(true);
     }
 
-    // Displays dashboard based on user type
     public static void showDashboard(String userType, String username) {
         if (userType == null) {
             JOptionPane.showMessageDialog(null, "Error: No user type returned.");
@@ -144,74 +121,91 @@ public class AuthApp {
         }
 
         if (userType.equalsIgnoreCase("Employee")) {
-            JFrame frame = new JFrame(userType + " Dashboard");
+            // Employee dashboard code unchanged
+            JFrame frame = new JFrame("Employee Dashboard");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(500, 400);
+            frame.setSize(800, 600);
             frame.setLayout(new BorderLayout());
 
-            JLabel label = new JLabel("Welcome to the " + userType + " Dashboard!", JLabel.CENTER);
-            label.setFont(new Font("Arial", Font.BOLD, 16));
-            frame.add(label, BorderLayout.NORTH);
+            JLabel title = new JLabel("Welcome to the Employee Dashboard!", JLabel.CENTER);
+            title.setFont(new Font("Arial", Font.BOLD, 18));
+            frame.add(title, BorderLayout.NORTH);
 
-            JPanel productPanel = new JPanel(new GridLayout(6, 2));
-            JTextField nameField = new JTextField();
-            JTextField stockField = new JTextField();
-            JTextField priceField = new JTextField();
+            JPanel formPanel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.insets = new Insets(5, 5, 5, 5);
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+
+            formPanel.add(new JLabel("Product Name:"), gbc);
+            gbc.gridx = 1;
+            JTextField nameField = new JTextField(20);
+            formPanel.add(nameField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            formPanel.add(new JLabel("Stock Amount:"), gbc);
+            gbc.gridx = 1;
+            JTextField stockField = new JTextField(20);
+            formPanel.add(stockField, gbc);
+
+            gbc.gridx = 0; gbc.gridy++;
+            formPanel.add(new JLabel("Price:"), gbc);
+            gbc.gridx = 1;
+            JTextField priceField = new JTextField(20);
+            formPanel.add(priceField, gbc);
+
+            gbc.gridx = 1; gbc.gridy++;
             JButton addProductButton = new JButton("Add Product");
+            formPanel.add(addProductButton, gbc);
 
-            productPanel.add(new JLabel("Product Name:"));
-            productPanel.add(nameField);
-            productPanel.add(new JLabel("Stock Amount:"));
-            productPanel.add(stockField);
-            productPanel.add(new JLabel("Price:"));
-            productPanel.add(priceField);
+            gbc.gridx = 0; gbc.gridy++;
+            formPanel.add(new JLabel("Product ID to Update:"), gbc);
+            gbc.gridx = 1;
+            JTextField updateIdField = new JTextField(20);
+            formPanel.add(updateIdField, gbc);
 
-            // Extra components for updating stock
-            JTextField updateIdField = new JTextField();
-            JTextField updateStockField = new JTextField();
+            gbc.gridx = 0; gbc.gridy++;
+            formPanel.add(new JLabel("New Stock Amount:"), gbc);
+            gbc.gridx = 1;
+            JTextField updateStockField = new JTextField(20);
+            formPanel.add(updateStockField, gbc);
+
+            gbc.gridx = 1; gbc.gridy++;
             JButton updateStockButton = new JButton("Update Stock");
+            formPanel.add(updateStockButton, gbc);
 
-            productPanel.add(new JLabel("Product ID to Update:"));
-            productPanel.add(updateIdField);
-            productPanel.add(new JLabel("New Stock Amount:"));
-            productPanel.add(updateStockField);
-            productPanel.add(new JLabel());
-            productPanel.add(updateStockButton);
+            gbc.gridx = 1; gbc.gridy++;
+            JButton viewSalesButton = new JButton("View Sales Records");
+            formPanel.add(viewSalesButton, gbc);
 
-            // Action to add product
+            frame.add(formPanel, BorderLayout.CENTER);
+
+            // Add product logic
             addProductButton.addActionListener(e -> {
-                String name = nameField.getText();
-                String stockText = stockField.getText();
-                String priceText = priceField.getText();
-
                 try (Connection conn = Database.getConnection()) {
                     String sql = "INSERT INTO products (name, stock, price) VALUES (?, ?, ?)";
                     PreparedStatement stmt = conn.prepareStatement(sql);
-                    stmt.setString(1, name);
-                    stmt.setInt(2, Integer.parseInt(stockText));
-                    stmt.setDouble(3, Double.parseDouble(priceText));
-                    int rows = stmt.executeUpdate();
-                    if (rows > 0) {
-                        JOptionPane.showMessageDialog(frame, "Product added!");
-                    }
+                    stmt.setString(1, nameField.getText());
+                    stmt.setInt(2, Integer.parseInt(stockField.getText()));
+                    stmt.setDouble(3, Double.parseDouble(priceField.getText()));
+                    stmt.executeUpdate();
+                    JOptionPane.showMessageDialog(frame, "Product added!");
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     JOptionPane.showMessageDialog(frame, "Error adding product.");
                 }
             });
 
-            // Action to update stock
+            // Update stock logic
             updateStockButton.addActionListener(e -> {
-                String idText = updateIdField.getText();
-                String newStockText = updateStockField.getText();
-
                 try (Connection conn = Database.getConnection()) {
                     String sql = "UPDATE products SET stock = ? WHERE id = ?";
                     PreparedStatement stmt = conn.prepareStatement(sql);
-                    stmt.setInt(1, Integer.parseInt(newStockText));
-                    stmt.setInt(2, Integer.parseInt(idText));
-                    int rows = stmt.executeUpdate();
-                    if (rows > 0) {
+                    stmt.setInt(1, Integer.parseInt(updateStockField.getText()));
+                    stmt.setInt(2, Integer.parseInt(updateIdField.getText()));
+                    int result = stmt.executeUpdate();
+                    if (result > 0) {
                         JOptionPane.showMessageDialog(frame, "Stock updated!");
                     } else {
                         JOptionPane.showMessageDialog(frame, "Product ID not found.");
@@ -222,9 +216,39 @@ public class AuthApp {
                 }
             });
 
-            frame.add(productPanel, BorderLayout.CENTER);
-            frame.setVisible(true);
+            // View sales logic
+            viewSalesButton.addActionListener(e -> {
+                JFrame salesFrame = new JFrame("Sales Records");
+                salesFrame.setSize(700, 400);
+                String[] columns = {"Username", "Product Name", "Quantity", "Total Price", "Time"};
+                DefaultTableModel model = new DefaultTableModel(columns, 0);
+                JTable table = new JTable(model);
+                JScrollPane pane = new JScrollPane(table);
+                salesFrame.add(pane);
 
+                try (Connection conn = Database.getConnection()) {
+                    String sql = "SELECT username, product_name, quantity, total_price, purchase_time FROM purchases ORDER BY purchase_time DESC";
+                    PreparedStatement stmt = conn.prepareStatement(sql);
+                    ResultSet rs = stmt.executeQuery();
+                    while (rs.next()) {
+                        model.addRow(new Object[]{
+                                rs.getString("username"),
+                                rs.getString("product_name"),
+                                rs.getInt("quantity"),
+                                rs.getDouble("total_price"),
+                                rs.getTimestamp("purchase_time").toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        });
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(salesFrame, "Error loading sales.");
+                }
+
+                salesFrame.setVisible(true);
+            });
+
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
         } else if (userType.equalsIgnoreCase("Customer")) {
             JFrame frame = new JFrame(userType + " Dashboard");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -235,6 +259,14 @@ public class AuthApp {
             label.setFont(new Font("Arial", Font.BOLD, 16));
             frame.add(label, BorderLayout.NORTH);
 
+            // Search panel
+            JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            JLabel searchLabel = new JLabel("Search Products:");
+            JTextField searchField = new JTextField(20);
+            searchPanel.add(searchLabel);
+            searchPanel.add(searchField);
+            frame.add(searchPanel, BorderLayout.AFTER_LAST_LINE);
+
             // Product table
             String[] columnNames = {"ID", "Name", "Price", "Stock"};
             DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
@@ -243,6 +275,9 @@ public class AuthApp {
                 }
             };
             JTable table = new JTable(model);
+            TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+            table.setRowSorter(sorter);
+
             JScrollPane scrollPane = new JScrollPane(table);
             scrollPane.setPreferredSize(new Dimension(880, 200)); // fixed height for product list
             frame.add(scrollPane, BorderLayout.NORTH);
@@ -282,7 +317,7 @@ public class AuthApp {
                 ResultSet rs = stmt.executeQuery(sql);
 
                 while (rs.next()) {
-                    model.addRow(new Object[] {
+                    model.addRow(new Object[]{
                             rs.getInt("id"),
                             rs.getString("name"),
                             rs.getDouble("price"),
@@ -296,6 +331,33 @@ public class AuthApp {
 
             // Load purchase history
             loadPurchaseHistory(historyModel, username);
+
+            // Search field listener to filter table
+            searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+                private void updateFilter() {
+                    String text = searchField.getText();
+                    if (text.trim().length() == 0) {
+                        sorter.setRowFilter(null);
+                    } else {
+                        sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text), 1)); // filter on "Name" column
+                    }
+                }
+
+                @Override
+                public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                    updateFilter();
+                }
+
+                @Override
+                public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                    updateFilter();
+                }
+
+                @Override
+                public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                    updateFilter();
+                }
+            });
 
             // Purchase button action
             purchaseButton.addActionListener(e -> {
@@ -321,10 +383,12 @@ public class AuthApp {
                     return;
                 }
 
-                int productId = (int) model.getValueAt(selectedRow, 0);
-                String productName = (String) model.getValueAt(selectedRow, 1);
-                double price = (double) model.getValueAt(selectedRow, 2);
-                int stock = (int) model.getValueAt(selectedRow, 3);
+                int modelRow = table.convertRowIndexToModel(selectedRow);
+
+                int productId = (int) model.getValueAt(modelRow, 0);
+                String productName = (String) model.getValueAt(modelRow, 1);
+                double price = (double) model.getValueAt(modelRow, 2);
+                int stock = (int) model.getValueAt(modelRow, 3);
 
                 if (qty > stock) {
                     JOptionPane.showMessageDialog(frame, "Insufficient stock. Available: " + stock);
@@ -362,7 +426,7 @@ public class AuthApp {
                     conn.commit();
 
                     // Update UI table stock value
-                    model.setValueAt(stock - qty, selectedRow, 3);
+                    model.setValueAt(stock - qty, modelRow, 3);
 
                     // Add to purchase history table
                     historyModel.addRow(new Object[]{
@@ -397,7 +461,7 @@ public class AuthApp {
                 Timestamp ts = rs.getTimestamp("purchase_time");
                 String dateTime = ts.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-                historyModel.addRow(new Object[] {
+                historyModel.addRow(new Object[]{
                         dateTime,
                         rs.getString("product_name"),
                         rs.getInt("quantity"),
@@ -409,7 +473,6 @@ public class AuthApp {
         }
     }
 
-    // Authenticates a user against the database
     private static String authenticate(String username, String password) {
         try (Connection conn = Database.getConnection()) {
             String sql = "SELECT user_type FROM users WHERE username = ? AND password = ?";
@@ -419,7 +482,6 @@ public class AuthApp {
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 String userType = rs.getString("user_type");
-                System.out.println("UserType: " + userType);
                 logger.info("User '" + username + "' logged in as " + userType);
                 return userType;
             } else {
@@ -427,13 +489,12 @@ public class AuthApp {
                 return null;
             }
         } catch (Exception e) {
-            logger.severe("Login error for username: " + username + " - " + e.getMessage());
+            logger.severe("Login error: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
 
-    // Registers a new user in the database
     private static boolean register(String username, String password, String fullName, String phone, String gender, String userType) {
         try (Connection conn = Database.getConnection()) {
             String sql = "INSERT INTO users (username, password, full_name, phone, gender, user_type) VALUES (?, ?, ?, ?, ?, ?)";
@@ -444,13 +505,11 @@ public class AuthApp {
             stmt.setString(4, phone);
             stmt.setString(5, gender);
             stmt.setString(6, userType);
-            int rows = stmt.executeUpdate();
-            return rows > 0;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
-            logger.severe("Error during registration for user: " + username + " - " + e.getMessage());
+            logger.severe("Registration error: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 }
-
